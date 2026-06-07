@@ -33,18 +33,22 @@
 
 ```sql
 Table: reflections
-  id              uuid           PK, auto-generated
-  class           text           班級（自由輸入）
-  seat_number     text           座號
-  name            text           學生姓名
-  email           text           學生 Email（不對外公開）
-  content         text           服務心得（最多 500 字）
-  status          text           pending | reviewed | hidden
-  teacher_id      text           lulu | yichi
-  teacher_name    text           老師顯示名稱
-  teacher_comment text           老師回饋內容
-  reviewed_at     timestamptz    批閱時間
-  created_at      timestamptz    送出時間
+  id               uuid           PK, auto-generated
+  class            text           班級（自由輸入）
+  seat_number      text           座號
+  name             text           學生姓名
+  email            text           學生 Email（不對外公開）
+  content          text           服務心得（最多 500 字）
+  status           text           pending | reviewed | hidden
+  teacher_id       text           第一位老師 lulu | yichi
+  teacher_name     text           第一位老師顯示名稱
+  teacher_comment  text           第一位老師回饋
+  reviewed_at      timestamptz    第一位老師批閱時間
+  teacher2_id      text           第二位老師 lulu | yichi（可為空）
+  teacher2_name    text           第二位老師顯示名稱（可為空）
+  teacher2_comment text           第二位老師回饋（可為空）
+  reviewed2_at     timestamptz    第二位老師批閱時間（可為空）
+  created_at       timestamptz    送出時間
 ```
 
 ---
@@ -56,10 +60,13 @@ Table: reflections
 | 盧盧老師 | `lulu` | d225@yphs.tw | 盧盧老師已批閱 |
 | 怡琪老師 | `yichi` | yichi@yphs.tw | 怡琪老師已批閱 |
 
-老師批改完成後系統自動：
-1. 更新心得狀態為「已批閱」
-2. 發送 Email 給學生（含心得全文 + 老師回饋 + 紅色電子印章）
-3. BCC 兩位老師（d225@yphs.tw、yichi@yphs.tw）
+### 雙老師批改機制
+
+- 每篇心得支援**兩位老師各自批改**，也可只有一位老師批改
+- 第一位批改的老師存入 `teacher_*` 欄位，第二位存入 `teacher2_*` 欄位
+- 同一位老師可隨時修改自己的評語
+- 展示牆根據有幾位老師批改，顯示對應數量的印章與回饋
+- 批改完成後自動發送 Email 給學生，BCC 兩位老師（d225@yphs.tw、yichi@yphs.tw）
 
 ---
 
