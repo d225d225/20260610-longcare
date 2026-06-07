@@ -12,6 +12,10 @@ export type Reflection = {
   teacher_name: string | null
   teacher_comment: string | null
   reviewed_at: string | null
+  teacher2_id: 'lulu' | 'yichi' | null
+  teacher2_name: string | null
+  teacher2_comment: string | null
+  reviewed2_at: string | null
   created_at: string
 }
 

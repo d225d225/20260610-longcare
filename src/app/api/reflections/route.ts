@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
   const db = serviceSupabase()
 
   if (teacherId) {
-    // Teacher sees all non-hidden
     const { data, error } = await db
       .from('reflections')
       .select('*')
@@ -20,12 +19,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data)
   }
 
-  // Public sees only reviewed
+  // 公開只顯示已批閱，不含 email
   const { data, error } = await db
     .from('reflections')
-    .select('id,class,seat_number,name,content,teacher_name,teacher_id,teacher_comment,reviewed_at,created_at')
+    .select('id,class,seat_number,name,content,status,teacher_id,teacher_name,teacher_comment,reviewed_at,teacher2_id,teacher2_name,teacher2_comment,reviewed2_at,created_at')
     .eq('status', 'reviewed')
-    .order('reviewed_at', { ascending: false })
+    .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

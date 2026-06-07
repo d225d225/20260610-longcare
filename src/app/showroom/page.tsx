@@ -39,7 +39,7 @@ export default function Showroom() {
     setReflections(prev => prev.filter(r => r.id !== id))
   }
 
-  const reviewed = reflections.filter(r => r.status === 'reviewed')
+  const reviewed = reflections.filter(r => !r.status || r.status === 'reviewed')
   const pending = reflections.filter(r => r.status === 'pending')
 
   return (

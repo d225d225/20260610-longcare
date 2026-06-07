@@ -19,15 +19,55 @@ export async function POST(req: NextRequest) {
 
   const db = serviceSupabase()
 
-  const { data, error } = await db
+  // 先取得現有資料，判斷要更新哪個欄位
+  const { data: existing, error: fetchError } = await db
     .from('reflections')
-    .update({
+    .select('teacher_id, teacher2_id')
+    .eq('id', reflectionId)
+    .single()
+
+  if (fetchError) {
+    return NextResponse.json({ error: '找不到心得' }, { status: 404 })
+  }
+
+  let updatePayload: Record<string, unknown>
+
+  if (!existing.teacher_id) {
+    // 第一位老師批改
+    updatePayload = {
       status: 'reviewed',
       teacher_id: teacherId,
       teacher_name: TEACHERS[teacherId].name,
       teacher_comment: comment.trim(),
       reviewed_at: new Date().toISOString(),
-    })
+    }
+  } else if (existing.teacher_id === teacherId) {
+    // 同一位老師更新自己的評語
+    updatePayload = {
+      teacher_comment: comment.trim(),
+      reviewed_at: new Date().toISOString(),
+    }
+  } else if (!existing.teacher2_id) {
+    // 第二位老師批改
+    updatePayload = {
+      teacher2_id: teacherId,
+      teacher2_name: TEACHERS[teacherId].name,
+      teacher2_comment: comment.trim(),
+      reviewed2_at: new Date().toISOString(),
+    }
+  } else if (existing.teacher2_id === teacherId) {
+    // 第二位老師更新自己的評語
+    updatePayload = {
+      teacher2_comment: comment.trim(),
+      reviewed2_at: new Date().toISOString(),
+    }
+  } else {
+    return NextResponse.json({ error: '兩位老師都已批改' }, { status: 400 })
+  }
+
+  const { data, error } = await db
+    .from('reflections')
+    .update(updatePayload)
     .eq('id', reflectionId)
     .select()
     .single()

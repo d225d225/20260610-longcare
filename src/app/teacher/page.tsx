@@ -103,15 +103,32 @@ function LoginPanel({ onLogin }: { onLogin: (s: Session) => void }) {
 
 /* ── Review Modal ── */
 function ReviewModal({
-  reflection, teacherName, onClose, onSave,
+  reflection, session, onClose, onSave,
 }: {
   reflection: Reflection
-  teacherName: string
+  session: Session
   onClose: () => void
   onSave: (comment: string) => Promise<void>
 }) {
-  const [comment, setComment] = useState(reflection.teacher_comment ?? '')
+  // 判斷目前老師要填哪個欄位
+  const isTeacher1 = reflection.teacher_id === session.id
+  const isTeacher2 = reflection.teacher2_id === session.id
+  const myExistingComment = isTeacher1
+    ? (reflection.teacher_comment ?? '')
+    : isTeacher2
+    ? (reflection.teacher2_comment ?? '')
+    : ''
+
+  const [comment, setComment] = useState(myExistingComment)
   const [saving, setSaving] = useState(false)
+
+  // 另一位老師的評語（唯讀顯示）
+  const otherComment = isTeacher1
+    ? reflection.teacher2_comment
+    : reflection.teacher_comment
+  const otherName = isTeacher1
+    ? reflection.teacher2_name
+    : reflection.teacher_name
 
   async function handleSave() {
     if (!comment.trim()) return
@@ -132,7 +149,7 @@ function ReviewModal({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Student content */}
+          {/* 學生心得 */}
           <div>
             <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">學生心得</p>
             <p className="text-gray-700 text-sm whitespace-pre-wrap leading-relaxed bg-gray-50 rounded-lg p-4">
@@ -140,9 +157,19 @@ function ReviewModal({
             </p>
           </div>
 
-          {/* Teacher comment */}
+          {/* 另一位老師已有的評語（唯讀） */}
+          {otherComment && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-xs font-semibold text-orange-500 mb-1">{otherName} 已批改</p>
+              <p className="text-orange-700 text-sm whitespace-pre-wrap">{otherComment}</p>
+            </div>
+          )}
+
+          {/* 我的評語 */}
           <div>
-            <p className="text-xs font-semibold text-red-500 mb-2 uppercase tracking-wider">老師回饋</p>
+            <p className="text-xs font-semibold text-red-500 mb-2 uppercase tracking-wider">
+              {session.name} 的回饋
+            </p>
             <textarea
               value={comment}
               onChange={e => setComment(e.target.value)}
@@ -152,10 +179,10 @@ function ReviewModal({
             />
           </div>
 
-          {/* Stamp preview */}
+          {/* 印章預覽 */}
           <div className="flex items-center gap-4">
             <p className="text-xs text-gray-400">儲存後將顯示印章：</p>
-            <Stamp teacherId={reflection.teacher_id ?? 'lulu'} />
+            <Stamp teacherId={session.id} />
           </div>
 
           <div className="flex gap-3">
@@ -353,8 +380,8 @@ export default function TeacherDashboard() {
 
       {selected && session && (
         <ReviewModal
-          reflection={{ ...selected, teacher_id: selected.teacher_id ?? session.id }}
-          teacherName={session.name}
+          reflection={selected}
+          session={session}
           onClose={() => setSelected(null)}
           onSave={handleSave}
         />
