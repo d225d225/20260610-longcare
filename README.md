@@ -3,15 +3,17 @@
 **115年度青銀共融一日照服小幫手體驗活動**  
 永平高中 × 恆安住宿長照機構 · 民國115年6月10日
 
+🌐 **線上網址**：https://20260610-longcare.vercel.app
+
 ---
 
-## 功能概覽
+## 網頁功能
 
-| 網頁 | 路徑 | 說明 |
-|------|------|------|
-| 學生心得填寫 | `/` | 填寫班級、座號、姓名、Email、心得 |
-| 教師批改後台 | `/teacher` | 登入、批改、發送 Email 通知 |
-| 心得展示牆 | `/showroom` | 公開展示已批閱心得（含紅色印章） |
+| 網址 | 功能 |
+|------|------|
+| `/` | 學生填寫服務心得 |
+| `/teacher` | 教師批改後台（需密碼登入） |
+| `/showroom` | 心得展示牆（公開） |
 
 ---
 
@@ -22,8 +24,8 @@
 | 框架 | Next.js 14 (App Router) + TypeScript |
 | 樣式 | Tailwind CSS |
 | 資料庫 | Supabase (PostgreSQL) |
-| Email | Resend |
-| 部署 | Vercel（推薦）/ 任何支援 Node.js 的平台 |
+| Email | Gmail SMTP（nodemailer） |
+| 部署 | Vercel |
 
 ---
 
@@ -31,61 +33,81 @@
 
 ```sql
 Table: reflections
-  id            uuid           PK, auto-generated
-  class         text           班級（例：高一仁）
-  seat_number   text           座號
-  name          text           學生姓名
-  email         text           學生 Email
-  content       text           服務心得
-  status        text           pending | reviewed | hidden
-  teacher_id    text           lulu | yichi
-  teacher_name  text           老師顯示名稱
-  teacher_comment text         老師回饋內容
-  reviewed_at   timestamptz    批閱時間
-  created_at    timestamptz    送出時間
+  id              uuid           PK, auto-generated
+  class           text           班級（自由輸入）
+  seat_number     text           座號
+  name            text           學生姓名
+  email           text           學生 Email（不對外公開）
+  content         text           服務心得（最多 500 字）
+  status          text           pending | reviewed | hidden
+  teacher_id      text           lulu | yichi
+  teacher_name    text           老師顯示名稱
+  teacher_comment text           老師回饋內容
+  reviewed_at     timestamptz    批閱時間
+  created_at      timestamptz    送出時間
 ```
 
 ---
 
-## 本地運行
+## 教師資訊
 
-### 1. 安裝相依套件
+| 老師 | ID | Email | 印章 |
+|------|-----|-------|------|
+| 盧盧老師 | `lulu` | d225@yphs.tw | 盧盧老師已批閱 |
+| 怡琪老師 | `yichi` | yichi@yphs.tw | 怡琪老師已批閱 |
+
+老師批改完成後系統自動：
+1. 更新心得狀態為「已批閱」
+2. 發送 Email 給學生（含心得全文 + 老師回饋 + 紅色電子印章）
+3. BCC 兩位老師（d225@yphs.tw、yichi@yphs.tw）
+
+---
+
+## 本地開發
 
 ```bash
-cd 20260610-longcare
+# 安裝相依套件
 npm install
-```
 
-### 2. 設定環境變數
-
-```bash
+# 複製環境變數範本
 cp .env.example .env.local
-```
+# 填入 .env.local 所有值（見下方說明）
 
-編輯 `.env.local`，填入以下值：
-
-| 變數 | 說明 | 取得方式 |
-|------|------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 專案 URL | Supabase → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 公開金鑰 | 同上 |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 服務金鑰（機密）| 同上 |
-| `RESEND_API_KEY` | Resend API 金鑰 | resend.com → API Keys |
-| `RESEND_FROM` | 寄件人信箱（需在 Resend 驗證網域）| 自行設定 |
-| `TEACHER_LULU_PASSWORD` | 盧盧老師登入密碼 | 自行設定 |
-| `TEACHER_YICHI_PASSWORD` | 怡琪老師登入密碼 | 自行設定 |
-| `NEXT_PUBLIC_APP_URL` | 網站公開 URL | 本地開發用 `http://localhost:3000` |
-
-### 3. 建立 Supabase 資料表
-
-前往 Supabase → SQL Editor，複製並執行 `supabase-schema.sql` 的內容。
-
-### 4. 啟動開發伺服器
-
-```bash
+# 啟動開發伺服器
 npm run dev
 ```
 
-打開 [http://localhost:3000](http://localhost:3000)
+打開 http://localhost:3000
+
+---
+
+## 環境變數說明（.env.local）
+
+| 變數 | 說明 |
+|------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 專案 URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Legacy anon key（JWT 格式） |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Legacy service_role key（JWT 格式） |
+| `GMAIL_USER` | 寄件 Gmail 帳號（d225@yphs.tw） |
+| `GMAIL_APP_PASSWORD` | Gmail 應用程式密碼（16碼，myaccount.google.com/apppasswords） |
+| `TEACHER_LULU_PASSWORD` | 盧盧老師登入密碼 |
+| `TEACHER_YICHI_PASSWORD` | 怡琪老師登入密碼 |
+| `NEXT_PUBLIC_APP_URL` | 網站公開 URL |
+
+> ⚠️ **重要**：Supabase 需使用 **Legacy** anon/service_role key（JWT 格式，`eyJ...` 開頭），
+> 新版 `sb_publishable_*` / `sb_secret_*` 格式與本專案 SDK 版本不相容。
+
+---
+
+## Supabase 初始化
+
+建立專案後在 SQL Editor 執行 `supabase-schema.sql`，並額外執行：
+
+```sql
+GRANT ALL ON public.reflections TO service_role;
+GRANT ALL ON public.reflections TO anon;
+GRANT ALL ON public.reflections TO authenticated;
+```
 
 ---
 
@@ -93,24 +115,15 @@ npm run dev
 
 ```bash
 npm i -g vercel
-vercel
+cd 20260610-longcare
+vercel --prod
 ```
 
-將 `.env.local` 中的環境變數逐一填入 Vercel Dashboard → Settings → Environment Variables。
+環境變數需在 Vercel Dashboard 或 CLI 逐一設定：
 
----
-
-## 教師資訊
-
-| 老師 | ID | Email | 印章文字 |
-|------|-----|-------|---------|
-| 盧盧老師 | `lulu` | d225@yphs.tw | 盧盧老師已批閱 |
-| 怡琪老師 | `yichi` | yichi@yphs.tw | 怡琪老師已批閱 |
-
-老師批改完成後，系統自動：
-1. 更新心得狀態為「已批閱」
-2. 發送 Email 給學生（含心得全文 + 老師回饋 + 紅色電子印章）
-3. BCC 兩位老師（d225@yphs.tw、yichi@yphs.tw）
+```bash
+echo "值" | vercel env add 變數名稱 production
+```
 
 ---
 
@@ -122,7 +135,7 @@ src/
 │   ├── page.tsx              學生心得填寫頁
 │   ├── teacher/page.tsx      教師批改後台
 │   ├── showroom/page.tsx     心得展示牆
-│   ├── layout.tsx            共用 Layout（導覽列、Footer）
+│   ├── layout.tsx            共用 Layout
 │   └── api/
 │       ├── submit/           POST 學生送出心得
 │       ├── reflections/      GET 取得心得列表
@@ -130,10 +143,10 @@ src/
 │       ├── delete/           POST 隱藏心得
 │       └── login/            POST 教師登入
 ├── components/
-│   ├── Stamp.tsx             紅色電子印章元件（含蓋章動畫）
-│   └── ReflectionCard.tsx    心得卡片元件
+│   ├── Stamp.tsx             紅色電子印章（含蓋章動畫）
+│   └── ReflectionCard.tsx    心得卡片
 └── lib/
     ├── supabase.ts           Supabase 客戶端
-    ├── email.ts              Resend Email 發送
-    └── auth.ts               教師驗證邏輯
+    ├── email.ts              Gmail SMTP 發信
+    └── auth.ts               教師驗證
 ```

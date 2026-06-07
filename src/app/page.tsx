@@ -1,10 +1,6 @@
 'use client'
 import { useState } from 'react'
 
-const CLASSES = ['高一仁', '高一義', '高一禮', '高一智', '高一信',
-  '高二仁', '高二義', '高二禮', '高二智', '高二信',
-  '高三仁', '高三義', '高三禮', '高三智', '高三信']
-
 export default function StudentForm() {
   const [form, setForm] = useState({
     class: '', seat_number: '', name: '', email: '', content: '',
@@ -74,14 +70,13 @@ export default function StudentForm() {
         {/* 班級 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">班級 <span className="text-red-500">*</span></label>
-          <select
+          <input
+            type="text"
             value={form.class}
             onChange={e => setForm(f => ({ ...f, class: e.target.value }))}
+            placeholder="例：高一仁、高二義"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-200"
-          >
-            <option value="">請選擇班級</option>
-            {CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          />
           {errors.class && <p className="text-red-500 text-xs mt-1">{errors.class}</p>}
         </div>
 
